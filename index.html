@@ -7,59 +7,74 @@
     <style>
         :root {
             --poker-green: #1a5e3a;
-            --bubble-bg: #ffffff;
-            --accent-orange: #e67e22;
             --ui-blue: #3498db;
             --ui-purple: #9b59b6;
-            --sorted-bg: #badc58;
-            --text-dark: #2c3e50;
+            --accent-orange: #e67e22;
+            --msg-bg: #fffbe6;
+            --msg-text: #d35400;
         }
 
-        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f4f7; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        .game-area { width: 100%; max-width: 850px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        /* 標題區 */
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { font-size: 2.2rem; color: #333; margin: 0; }
+        .subtitle { color: #666; margin-top: 10px; font-size: 1.1rem; }
+
+        .game-area { 
+            width: 100%; max-width: 900px; background: white; padding: 30px; 
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+        }
         
+        /* 資訊提示框 - 仿照截圖格式 */
         #info-msg { 
-            padding: 15px; margin-bottom: 20px; background: #fffbe6; border: 1px solid #ffe58f;
-            border-radius: 8px; color: #d35400; font-weight: bold; text-align: center; font-size: 1.2rem; min-height: 1.5em;
+            padding: 15px; margin-bottom: 20px; background: var(--msg-bg); 
+            border: 1px solid #ffe58f; border-radius: 12px; 
+            color: var(--msg-text); font-weight: bold; text-align: center; 
+            font-size: 1.2rem; min-height: 1.5em;
         }
 
+        /* 深綠色遊戲桌 */
         .game-board-container {
-            background: var(--poker-green); padding: 50px 20px; border-radius: 12px; 
-            margin-bottom: 20px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            background: var(--poker-green); padding: 50px 20px; border-radius: 15px; 
+            margin-bottom: 25px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center;
         }
 
         .cards-row { display: flex; justify-content: center; gap: 15px; }
 
         .card {
-            width: 65px; height: 65px; background: var(--bubble-bg); border-radius: 50%;
+            width: 65px; height: 65px; background: white; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
             font-size: 24px; font-weight: bold; color: #34495e;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.3s ease; border: 2px solid #bdc3c7;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.3s ease; 
+            border: 2px solid #bdc3c7;
         }
 
-        .card.comparing { transform: translateY(-15px); border-color: var(--accent-orange); box-shadow: 0 15px 20px rgba(230, 126, 34, 0.3); }
+        /* 正在比較的泡泡高亮 */
+        .card.comparing { transform: translateY(-15px); border-color: var(--accent-orange); box-shadow: 0 15px 25px rgba(230, 126, 34, 0.3); }
         .card.sorted { background: #e8f8f5; border-color: #2ecc71; color: #27ae60; }
 
+        /* 按鈕群組 - 仿照截圖顏色 */
         .btn-group { text-align: center; margin-bottom: 25px; display: flex; justify-content: center; gap: 15px; }
-        .game-btn { padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .game-btn { 
+            padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; 
+            border-radius: 10px; font-weight: bold; transition: 0.2s; color: #fff; 
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
         .btn-start { background: var(--ui-blue); }
         .btn-demo { background: var(--ui-purple); }
-        .btn-action { background: var(--accent-orange); color: white; padding: 10px 20px; font-size: 1rem; }
+        .btn-action { background: var(--accent-orange); }
         .game-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        .game-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-        #controls { margin-top: 15px; display: none; justify-content: center; gap: 10px; }
+        #controls { margin-top: 15px; display: none; justify-content: center; gap: 15px; }
 
-        /* 歷程記錄樣式還原 */
+        /* 歷程記錄 - 修正為最新在最上方 */
         .history-section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; width: 100%; }
-        .history-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .history-row { display: flex; align-items: center; padding: 12px 20px; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; }
-        .history-row:nth-child(odd) { background-color: #fdfdfd; }
-        .history-row:nth-child(even) { background-color: #f8f9fa; }
+        .history-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: #333; }
+        .history-row { display: flex; align-items: center; padding: 12px 20px; border-radius: 10px; margin-bottom: 8px; background-color: #f8f9fa; }
         
-        .step-label { min-width: 100px; font-weight: normal; color: #555; font-size: 1rem; }
+        .step-label { min-width: 100px; font-weight: normal; color: #555; }
         .history-bubbles { display: flex; gap: 12px; margin-left: 20px; }
         
         .mini-bubble { 
@@ -72,24 +87,30 @@
 </head>
 <body>
 
-<div class="game-area">
-    <div class="btn-group">
-        <button class="game-btn btn-start" onclick="initGame()">🚀 開始挑戰模式</button>
-        <button class="game-btn btn-demo" id="demo-btn" onclick="startDemo()">🎓 自動演示模式</button>
-    </div>
+<header>
+    <h1>🫧 泡泡偵探：氣泡排序挑戰</h1>
+    <p class="subtitle">點擊下方按鈕開始，觀察最大值如何像泡泡一樣浮上來！</p>
+</header>
 
-    <div id="info-msg">準備好後請選擇模式</div>
+<div class="game-area">
+    <div id="info-msg">點擊「開始挑戰」進入評量</div>
     
     <div class="game-board-container">
         <div class="cards-row" id="board"></div>
+        
         <div id="controls">
             <button class="game-btn btn-action" onclick="handleDecision(true)">🔄 交換</button>
             <button class="game-btn btn-action" style="background:#34495e;" onclick="handleDecision(false)">➡️ 不動</button>
         </div>
     </div>
 
+    <div class="btn-group">
+        <button class="game-btn btn-start" onclick="initGame()">🚀 開始挑戰模式</button>
+        <button class="game-btn btn-demo" id="demo-btn" onclick="startDemo()">🎓 自動演示模式</button>
+    </div>
+
     <div class="history-section">
-        <div class="history-title">📊 排序歷程記錄 (由上往下閱讀)</div>
+        <div class="history-title">📊 排序歷程記錄</div>
         <div id="history-log"></div>
     </div>
 </div>
@@ -155,7 +176,7 @@
                 sortedCount++;
                 currentIdx = 0;
                 if (sortedCount >= cards.length - 1) {
-                    updateStatus(`🎉 挑戰完成！數列已從小到大排好囉。`);
+                    updateStatus(`🎉 挑戰完成！泡泡全部排好囉。`);
                     document.getElementById('controls').style.display = 'none';
                     renderBoard();
                     return;
@@ -163,10 +184,11 @@
             }
             renderBoard(currentIdx, currentIdx + 1);
         } else {
-            updateStatus(`❌ 判斷錯囉！請再觀察一下這兩張牌的大小。`);
+            updateStatus(`❌ 判斷錯囉！再看一眼數字大小。`);
         }
     }
 
+    // 核心修正：使用 prepend 讓最新紀錄在最上方
     function addHistoryRow(label, currentArr, h1, h2) {
         const log = document.getElementById('history-log');
         const row = document.createElement('div');
@@ -179,7 +201,6 @@
 
         const bubblesDiv = document.createElement('div');
         bubblesDiv.className = 'history-bubbles';
-        
         currentArr.forEach((val, i) => {
             const mini = document.createElement('div');
             mini.className = `mini-bubble ${ (i === h1 || i === h2) ? 'highlight' : '' }`;
@@ -188,10 +209,7 @@
         });
         
         row.appendChild(bubblesDiv);
-        log.appendChild(row); // 由上往下閱讀，使用 appendChild
-        
-        // 自動捲動到底部
-        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        log.prepend(row); // 這行保證最新記錄置頂
     }
 
     async function startDemo() {
@@ -200,32 +218,25 @@
         isAutoPlaying = true;
         document.getElementById('demo-btn').disabled = true;
         document.getElementById('controls').style.display = 'none';
-        updateStatus("🎓 自動演示模式啟動中...");
 
         for (let i = 0; i < n - 1; i++) {
             for (let j = 0; j < n - 1 - i; j++) {
                 renderBoard(j, j + 1);
-                updateStatus(`正在比較 ${cards[j]} 與 ${cards[j+1]}...`);
+                updateStatus(`正在自動演示：比較 ${cards[j]} 與 ${cards[j+1]}...`);
                 await new Promise(r => setTimeout(r, 1000));
 
                 if (cards[j] > cards[j+1]) {
                     [cards[j], cards[j+1]] = [cards[j+1], cards[j]];
                     stepCount++;
-                    updateStatus(`🔄 ${cards[j+1]} > ${cards[j]}，進行交換。`);
-                    addHistoryRow(`演示 ${stepCount}`, [...cards], j, j+1);
-                } else {
-                    stepCount++;
-                    updateStatus(`➡️ ${cards[j]} < ${cards[j+1]}，保持不變。`);
-                    addHistoryRow(`演示 ${stepCount}`, [...cards], j, j+1);
+                    addHistoryRow(`演示步驟 ${stepCount}`, [...cards], j, j+1);
                 }
                 renderBoard(j, j + 1);
-                await new Promise(r => setTimeout(r, 800));
+                await new Promise(r => setTimeout(r, 600));
             }
             sortedCount++;
         }
-        
         isAutoPlaying = false;
-        updateStatus("✅ 演示結束，氣泡排序完成！");
+        updateStatus("✅ 演示結束，所有大泡泡已浮向右側！");
         renderBoard();
         document.getElementById('demo-btn').disabled = false;
     }
