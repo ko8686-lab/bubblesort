@@ -16,7 +16,6 @@
 
         body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* 標題區 */
         header { text-align: center; margin-bottom: 20px; }
         h1 { font-size: 2.2rem; color: #333; margin: 0; }
         .subtitle { color: #666; margin-top: 10px; font-size: 1.1rem; }
@@ -26,7 +25,6 @@
             border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
         }
         
-        /* 資訊提示框 - 仿照截圖格式 */
         #info-msg { 
             padding: 15px; margin-bottom: 20px; background: var(--msg-bg); 
             border: 1px solid #ffe58f; border-radius: 12px; 
@@ -34,28 +32,27 @@
             font-size: 1.2rem; min-height: 1.5em;
         }
 
-        /* 深綠色遊戲桌 */
         .game-board-container {
-            background: var(--poker-green); padding: 50px 20px; border-radius: 15px; 
+            background: var(--poker-green); padding: 60px 20px; border-radius: 15px; 
             margin-bottom: 25px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center;
+            min-height: 200px; justify-content: center;
         }
 
-        .cards-row { display: flex; justify-content: center; gap: 15px; }
+        .cards-row { display: flex; justify-content: center; gap: 15px; align-items: center; height: 100px; }
 
         .card {
-            width: 65px; height: 65px; background: white; border-radius: 50%;
+            background: white; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            font-size: 24px; font-weight: bold; color: #34495e;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.3s ease; 
-            border: 2px solid #bdc3c7;
+            font-weight: bold; color: #34495e;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 2px solid #bdc3c7; position: relative;
         }
 
         /* 正在比較的泡泡高亮 */
-        .card.comparing { transform: translateY(-15px); border-color: var(--accent-orange); box-shadow: 0 15px 25px rgba(230, 126, 34, 0.3); }
-        .card.sorted { background: #e8f8f5; border-color: #2ecc71; color: #27ae60; }
+        .card.comparing { transform: translateY(-20px); border-color: var(--accent-orange); box-shadow: 0 15px 30px rgba(230, 126, 34, 0.4); z-index: 10; }
+        .card.sorted { background: #e8f8f5; border-color: #2ecc71; color: #27ae60; opacity: 0.9; }
 
-        /* 按鈕群組 - 仿照截圖顏色 */
         .btn-group { text-align: center; margin-bottom: 25px; display: flex; justify-content: center; gap: 15px; }
         .game-btn { 
             padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; 
@@ -69,27 +66,26 @@
 
         #controls { margin-top: 15px; display: none; justify-content: center; gap: 15px; }
 
-        /* 歷程記錄 - 修正為最新在最上方 */
         .history-section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; width: 100%; }
         .history-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: #333; }
         .history-row { display: flex; align-items: center; padding: 12px 20px; border-radius: 10px; margin-bottom: 8px; background-color: #f8f9fa; }
         
         .step-label { min-width: 100px; font-weight: normal; color: #555; }
-        .history-bubbles { display: flex; gap: 12px; margin-left: 20px; }
+        .history-bubbles { display: flex; gap: 12px; margin-left: 20px; align-items: center; }
         
         .mini-bubble { 
-            width: 35px; height: 35px; background: white; border: 1px solid #ddd;
+            background: white; border: 1px solid #ddd;
             display: flex; justify-content: center; align-items: center; 
-            font-size: 14px; border-radius: 50%; color: #333;
+            border-radius: 50%; color: #333; font-weight: bold;
         }
-        .mini-bubble.highlight { background: var(--accent-orange); color: white; border-color: var(--accent-orange); font-weight: bold; }
+        .mini-bubble.highlight { background: var(--accent-orange); color: white; border-color: var(--accent-orange); }
     </style>
 </head>
 <body>
 
 <header>
     <h1>🫧 泡泡偵探：氣泡排序挑戰</h1>
-    <p class="subtitle">點擊下方按鈕開始，觀察最大值如何像泡泡一樣浮上來！</p>
+    <p class="subtitle">數字越大的泡泡體積越大，試著讓它們「浮」到正確的位置！</p>
 </header>
 
 <div class="game-area">
@@ -99,8 +95,8 @@
         <div class="cards-row" id="board"></div>
         
         <div id="controls">
-            <button class="game-btn btn-action" onclick="handleDecision(true)">🔄 交換</button>
-            <button class="game-btn btn-action" style="background:#34495e;" onclick="handleDecision(false)">➡️ 不動</button>
+            <button class="game-btn btn-action" onclick="handleDecision(true)">🔄 交換 (左大於右)</button>
+            <button class="game-btn btn-action" style="background:#34495e;" onclick="handleDecision(false)">➡️ 不動 (左不超過右)</button>
         </div>
     </div>
 
@@ -110,27 +106,39 @@
     </div>
 
     <div class="history-section">
-        <div class="history-title">📊 排序歷程記錄</div>
+        <div class="history-title">📊 排序歷程記錄 (最新紀錄在上方)</div>
         <div id="history-log"></div>
     </div>
 </div>
 
 <script>
     let cards = [];
+    let sizeMap = {}; // 儲存每個數字對應的大小
     let n = 6;
     let currentIdx = 0;  
     let sortedCount = 0; 
     let stepCount = 0;
     let isAutoPlaying = false;
 
+    // 計算大小級距
+    function calculateSizes(nums) {
+        const sortedUnique = [...new Set(nums)].sort((a, b) => a - b);
+        const map = {};
+        // 6種大小級距：52px 到 82px
+        sortedUnique.forEach((val, index) => {
+            map[val] = 52 + (index * 6); 
+        });
+        return map;
+    }
+
     function initGame() {
         isAutoPlaying = false;
         document.getElementById('demo-btn').disabled = false;
         document.getElementById('controls').style.display = 'flex';
         
-        // 隨機生成數字
         const pool = Array.from({length: 30}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         cards = pool.slice(0, n);
+        sizeMap = calculateSizes(cards);
 
         currentIdx = 0;
         sortedCount = 0;
@@ -148,6 +156,13 @@
             const card = document.createElement('div');
             const isSorted = (i >= cards.length - sortedCount);
             card.className = `card ${isSorted ? 'sorted' : ''} ${(i === idx1 || i === idx2) ? 'comparing' : ''}`;
+            
+            // 動態設定大小
+            const size = sizeMap[val];
+            card.style.width = size + 'px';
+            card.style.height = size + 'px';
+            card.style.fontSize = (size / 2.8) + 'px';
+            
             card.innerText = val;
             board.appendChild(card);
         });
@@ -163,9 +178,9 @@
         if (userSwap === needSwap) {
             if (needSwap) {
                 [cards[currentIdx], cards[currentIdx + 1]] = [cards[currentIdx + 1], cards[currentIdx]];
-                updateStatus(`✅ 正確！${v1} > ${v2}，執行交換。`);
+                updateStatus(`✅ 正確！${v1} 體積較大，執行交換。`);
             } else {
-                updateStatus(`✅ 正確！${v1} < ${v2}，不需交換。`);
+                updateStatus(`✅ 正確！${v1} 較小，不需交換。`);
             }
 
             stepCount++;
@@ -176,7 +191,7 @@
                 sortedCount++;
                 currentIdx = 0;
                 if (sortedCount >= cards.length - 1) {
-                    updateStatus(`🎉 挑戰完成！泡泡全部排好囉。`);
+                    updateStatus(`🎉 挑戰完成！大泡泡都成功浮到右邊囉。`);
                     document.getElementById('controls').style.display = 'none';
                     renderBoard();
                     return;
@@ -184,11 +199,10 @@
             }
             renderBoard(currentIdx, currentIdx + 1);
         } else {
-            updateStatus(`❌ 判斷錯囉！再看一眼數字大小。`);
+            updateStatus(`❌ 判斷錯囉！請觀察泡泡的「體積」與數字大小。`);
         }
     }
 
-    // 核心修正：使用 prepend 讓最新紀錄在最上方
     function addHistoryRow(label, currentArr, h1, h2) {
         const log = document.getElementById('history-log');
         const row = document.createElement('div');
@@ -203,13 +217,21 @@
         bubblesDiv.className = 'history-bubbles';
         currentArr.forEach((val, i) => {
             const mini = document.createElement('div');
-            mini.className = `mini-bubble ${ (i === h1 || i === h2) ? 'highlight' : '' }`;
+            const isHighlight = (i === h1 || i === h2);
+            mini.className = `mini-bubble ${ isHighlight ? 'highlight' : '' }`;
+            
+            // 歷程中的小泡泡也依比例縮放
+            const miniSize = 25 + (Object.keys(sizeMap).sort((a,b)=>a-b).indexOf(val.toString()) * 3);
+            mini.style.width = miniSize + 'px';
+            mini.style.height = miniSize + 'px';
+            mini.style.fontSize = (miniSize / 2.5) + 'px';
+            
             mini.innerText = val;
             bubblesDiv.appendChild(mini);
         });
         
         row.appendChild(bubblesDiv);
-        log.prepend(row); // 這行保證最新記錄置頂
+        log.prepend(row);
     }
 
     async function startDemo() {
@@ -222,7 +244,7 @@
         for (let i = 0; i < n - 1; i++) {
             for (let j = 0; j < n - 1 - i; j++) {
                 renderBoard(j, j + 1);
-                updateStatus(`正在自動演示：比較 ${cards[j]} 與 ${cards[j+1]}...`);
+                updateStatus(`自動演示：比較 ${cards[j]} 與 ${cards[j+1]}...`);
                 await new Promise(r => setTimeout(r, 1000));
 
                 if (cards[j] > cards[j+1]) {
@@ -236,7 +258,7 @@
             sortedCount++;
         }
         isAutoPlaying = false;
-        updateStatus("✅ 演示結束，所有大泡泡已浮向右側！");
+        updateStatus("✅ 演示結束，泡泡已按大小排列完成！");
         renderBoard();
         document.getElementById('demo-btn').disabled = false;
     }
