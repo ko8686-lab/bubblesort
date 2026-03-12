@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泡泡偵探：氣泡排序挑戰 (協作平台相容版)</title>
+    <style>
+        :root {
+            --primary-color: #2980b9;
+            --accent-color: #e67e22;
+            --bubble-bg: #dff9fb;
+            --sorted-bg: #6ab04c;
+            --table-green: #1e3799;
+        }
+
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f4f7; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+        
+        .game-area { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
+        
+        #info-msg { padding: 15px; margin-bottom: 15px; background: #ebf5fb; border: 1px solid #aed6f1; border-radius: 8px; color: #2c3e50; font-weight: bold; text-align: center; font-size: 1.1rem; }
+
+        .game-board-container { background: var(--table-green); padding: 30px 10px; border-radius: 12px; margin-bottom: 20px; box-shadow: inset 0 0 30px rgba(0,0,0,0.5); display: flex; justify-content: center; }
+
+        .cards-row { display: flex; gap: 10px; }
+
+        .card {
+            width: 60px; height: 85px; background: var(--bubble-bg); border-radius: 50% 50% 45% 45%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; font-weight: bold; color: #0984e3;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.3s; border: 3px solid #74b9ff; cursor: pointer;
+        }
+        .card.comparing { transform: translateY(-10px); border-color: var(--accent-color); box-shadow: 0 10px 15px rgba(230, 126, 34, 0.4); }
+        .card.sorted { background: #badc58; border-color: var(--sorted-bg); color: #2f3542; }
+
+        /* 自定義模態視窗 (取代 prompt) */
+        #custom-modal {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; background: white; border: 2px solid var(--primary-color); border-radius: 12px;
+            padding: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 100; text-align: center;
+        }
+        #custom-modal p { font-size: 1.1rem; margin-bottom: 20px; font-weight: bold; }
+        .modal-btn { padding: 10px 20px; margin: 0 10px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; }
+        .btn-yes { background: var(--success-color, #27ae60); color: white; }
+        .btn-no { background: var(--accent-color); color: white; }
+
+        .btn-group { text-align: center; margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 14px; cursor: pointer; border-radius: 6px; border: none; margin: 5px; font-weight: bold; transition: 0.2s; }
+        .btn-start { background: #3498db; color: white; }
+        .btn-demo { background: #9b59b6; color: white; }
+
+        .history-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; padding: 8px; background: #fafafa; border-radius: 5px; font-size: 0.8rem; }
+        .step-label { min-width: 80px; font-weight: bold; }
+        .mini-card { width: 25px; height: 25px; background: white; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; border-radius: 50%; }
+        .mini-card.swap { background: var(--accent-color); color: white; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>🫧 泡泡偵探：氣泡排序挑戰</h2>
+</header>
+
+<div class="game-area">
+    <div id="info-msg">點擊「開始挑戰」來進行練習</div>
+    
+    <div class="game-board-container">
+        <div class="cards-row" id="board"></div>
+    </div>
+
+    <div id="custom-modal">
+        <p id="modal-text"></p>
+        <button class="modal-btn btn-yes" onclick="modalResponse(true)">是的，交換</button>
+        <button class="modal-btn btn-no" onclick="modalResponse(false)">不，不用交換</button>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-start" onclick="initGame()">🚀 開始挑戰模式</button>
+        <button class="btn-demo" onclick="startDemo()">🎓 自動演示模式</button>
+    </div>
+
+    <div class="history-section">
+        <h3>📊 排序歷程記錄</h3>
+        <div id="history-log"></div>
+    </div>
+</div>
+
+<script>
+    let cards = [];
+    let n = 6;
+    let currentIdx = 0;
+    let sortedCount = 0;
+    let stepCount = 0;
+    let isAutoPlaying = false;
+
+    function initGame() {
+        isAutoPlaying = false;
+        const pool = Array.from({length: 30}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        cards = pool.slice(0, n);
+        currentIdx = 0;
+        sortedCount = 0;
+        stepCount = 0;
+        document.getElementById('history-log').innerHTML = '';
+        document.getElementById('custom-modal').style.display = 'none';
+        updateStatus(`🔍 挑戰開始！請點擊第 1 與第 2 個泡泡進行比較。`, "info");
+        addHistoryRow("初始狀態", cards, -1, -1);
+        renderBoard(0, 1);
+    }
+
+    function renderBoard(idx1 = -1, idx2 = -1) {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        cards.forEach((val, i) => {
+            const card = document.createElement('div');
+            const isSorted = (i >= cards.length - sortedCount);
+            card.className = `card ${isSorted ? 'sorted' : ''} ${(i === idx1 || i === idx2) ? 'comparing' : ''}`;
+            card.innerText = val;
+            card.onclick = () => showCompareModal(i);
+            board.appendChild(card);
+        });
+    }
+
+    function showCompareModal(clickedIdx) {
+        if (isAutoPlaying || sortedCount >= cards.length - 1) return;
+        if (clickedIdx !== currentIdx && clickedIdx !== currentIdx + 1) {
+            updateStatus(`💡 請點擊目前比較的兩位：位置 ${currentIdx+1} 與 ${currentIdx+2}。`, "warn");
+            return;
+        }
+
+        const v1 = cards[currentIdx];
+        const v2 = cards[currentIdx + 1];
+        document.getElementById('modal-text').innerText = `比較 ${v1} 與 ${v2}：\n左邊大於右邊嗎？需不需要交換？`;
+        document.getElementById('custom-modal').style.display = 'block';
+    }
+
+    function modalResponse(userSwap) {
+        document.getElementById('custom-modal').style.display = 'none';
+        const v1 = cards[currentIdx];
+        const v2 = cards[currentIdx + 1];
+        const needSwap = v1 > v2;
+
+        if (userSwap === needSwap) {
+            if (needSwap) {
+                [cards[currentIdx], cards[currentIdx + 1]] = [cards[currentIdx + 1], cards[currentIdx]];
+                updateStatus(`✅ 正確！${v1} > ${v2}，交換完成。`, "success");
+            } else {
+                updateStatus(`✅ 正確！${v1} < ${v2}，保持原位。`, "success");
+            }
+            
+            stepCount++;
+            addHistoryRow(`步驟 ${stepCount}`, [...cards], currentIdx, currentIdx + 1);
+            currentIdx++;
+
+            if (currentIdx >= cards.length - 1 - sortedCount) {
+                sortedCount++;
+                currentIdx = 0;
+                if (sortedCount >= cards.length - 1) {
+                    updateStatus(`🎉 全數排序完成！`, "success");
+                } else {
+                    updateStatus(`✨ 這一輪完成，最大值已浮出。準備下一輪。`, "info");
+                }
+            }
+            renderBoard(currentIdx, currentIdx + 1);
+        } else {
+            updateStatus(`❌ 判斷錯囉！再看一次 ${v1} 和 ${v2} 的大小。`, "warn");
+        }
+    }
+
+    function updateStatus(msg, type) {
+        const el = document.getElementById('info-msg');
+        el.innerText = msg;
+        el.style.color = (type === "success") ? "#27ae60" : (type === "warn" ? "#e74c3c" : "#2c3e50");
+    }
+
+    function addHistoryRow(label, currentArr, i1, i2) {
+        const log = document.getElementById('history-log');
+        const row = document.createElement('div');
+        row.className = 'history-row';
+        row.innerHTML = `<span class="step-label">${label}</span>`;
+        currentArr.forEach((val, i) => {
+            row.innerHTML += `<div class="mini-card ${(i === i1 || i === i2) ? 'swap' : ''}">${val}</div>`;
+        });
+        log.appendChild(row);
+    }
+
+    async function startDemo() {
+        initGame();
+        isAutoPlaying = true;
+        updateStatus("🎓 自動演示模式...", "info");
+        for (let i = 0; i < cards.length - 1; i++) {
+            for (let j = 0; j < cards.length - 1 - i; j++) {
+                renderBoard(j, j + 1);
+                await new Promise(r => setTimeout(r, 800));
+                if (cards[j] > cards[j + 1]) {
+                    [cards[j], cards[j + 1]] = [cards[j + 1], cards[j]];
+                    stepCount++;
+                    addHistoryRow(`演示 ${stepCount}`, [...cards], j, j + 1);
+                }
+                renderBoard(j, j + 1);
+                await new Promise(r => setTimeout(r, 600));
+            }
+            sortedCount++;
+        }
+        isAutoPlaying = false;
+        renderBoard();
+        updateStatus("✅ 演示結束！", "success");
+    }
+</script>
+</body>
+</html>
