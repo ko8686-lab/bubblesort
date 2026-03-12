@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泡泡偵探：氣泡排序挑戰 (按鈕版)</title>
+    <title>泡泡偵探：氣泡排序 (歷程修正版)</title>
     <style>
         :root {
             --poker-green: #1a5e3a;
@@ -14,7 +14,6 @@
         }
 
         body { font-family: "Microsoft JhengHei", sans-serif; background: #2c3e50; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        
         .game-area { width: 100%; max-width: 850px; background: white; padding: 25px; border-radius: 15px; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         
         #info-msg { 
@@ -29,7 +28,6 @@
         }
 
         .cards-row { display: flex; justify-content: center; gap: 20px; }
-
         .card {
             width: 70px; height: 70px; background: var(--bubble-bg); border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
@@ -37,46 +35,43 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.3s ease; border: 3px solid #74b9ff;
         }
 
-        /* 高亮目前比較的兩顆泡泡 */
         .card.comparing { transform: translateY(-15px); border-color: var(--accent-gold); box-shadow: 0 15px 25px rgba(241, 196, 15, 0.4); }
         .card.sorted { background: #badc58; border-color: var(--sorted-bg); color: #2f3542; }
 
-        /* 控制按鈕區 */
         .control-group { text-align: center; margin: 20px 0; display: none; }
         .game-btn { padding: 12px 30px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 8px; margin: 0 10px; font-weight: bold; transition: 0.2s; color: #fff; }
         .btn-swap { background: var(--accent-gold); color: #333; }
         .btn-keep { background: var(--ui-blue); }
         .btn-start { background: #27ae60; width: 200px; display: block; margin: 0 auto; }
-        .game-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
 
-        /* 歷史記錄 */
         .history-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
         .history-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 10px; background: #fafafa; border-radius: 6px; }
-        .step-label { min-width: 100px; font-weight: bold; color: #666; font-size: 0.9rem; }
+        .history-row.pass-end { background: #e8f8f5; border-left: 5px solid var(--sorted-bg); }
+        .step-label { min-width: 110px; font-weight: bold; color: #666; font-size: 0.9rem; }
         .mini-card { width: 30px; height: 30px; background: white; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; font-size: 12px; border-radius: 50%; }
         .mini-card.swap { background: var(--accent-gold); color: #333; border-color: var(--accent-gold); }
     </style>
 </head>
 <body>
 
-<h1>🫧 泡泡偵探：氣泡排序 (按鈕互動版)</h1>
+<h1>🫧 泡泡偵探：氣泡排序 (優化版)</h1>
 
 <div class="game-area">
-    <div id="info-msg">準備好後，請點擊「開始挑戰」</div>
+    <div id="info-msg">點擊「開始挑戰」來進行練習</div>
     
     <div class="game-board-container">
         <div class="cards-row" id="board"></div>
     </div>
 
     <div class="control-group" id="controls">
-        <button class="game-btn btn-swap" onclick="handleBubbleDecision(true)">🔄 左大於右 (交換)</button>
-        <button class="game-btn btn-keep" onclick="handleBubbleDecision(false)">➡️ 左不超過右 (不動)</button>
+        <button class="game-btn btn-swap" onclick="handleDecision(true)">🔄 左大於右 (交換)</button>
+        <button class="game-btn btn-keep" onclick="handleDecision(false)">➡️ 左不超過右 (不動)</button>
     </div>
 
     <button id="start-btn" class="game-btn btn-start" onclick="initGame()">🚀 開始挑戰模式</button>
 
     <div class="history-section">
-        <h3>📊 排序歷程記錄</h3>
+        <h3>📊 排序歷程記錄 (僅記錄變動步驟)</h3>
         <div id="history-log"></div>
     </div>
 </div>
@@ -87,20 +82,20 @@
     let currentIdx = 0;  
     let sortedCount = 0; 
     let stepCount = 0;
+    let currentPass = 1;
 
     function initGame() {
         document.getElementById('start-btn').style.display = 'none';
         document.getElementById('controls').style.display = 'block';
-        
         const pool = Array.from({length: 30}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         cards = pool.slice(0, n);
-
         currentIdx = 0;
         sortedCount = 0;
         stepCount = 0;
+        currentPass = 1;
         document.getElementById('history-log').innerHTML = '';
-        updateStatus(`🔍 比較 ${cards[0]} 與 ${cards[1]}，左邊有比右邊大嗎？`, "info");
-        addHistoryRow("初始狀態", cards, -1, -1);
+        addHistoryRow("初始狀態", [...cards], -1, -1);
+        updateStatus(`🔍 回合 ${currentPass}：比較 ${cards[0]} 與 ${cards[1]}`, "info");
         renderBoard(0, 1);
     }
 
@@ -116,68 +111,63 @@
         });
     }
 
-    // 核心邏輯：處理按鈕點擊
-    function handleBubbleDecision(userSwap) {
+    function handleDecision(userSwap) {
         if (sortedCount >= cards.length - 1) return;
-
         const v1 = cards[currentIdx];
         const v2 = cards[currentIdx + 1];
         const needSwap = v1 > v2;
 
         if (userSwap === needSwap) {
-            // 答對了
             if (needSwap) {
                 [cards[currentIdx], cards[currentIdx + 1]] = [cards[currentIdx + 1], cards[currentIdx]];
-                updateStatus(`✅ 正確！${v1} > ${v2}，進行交換。`, "success");
+                stepCount++;
+                addHistoryRow(`步驟 ${stepCount} (交換)`, [...cards], currentIdx, currentIdx + 1);
+                updateStatus(`✅ 正確！${v1} > ${v2}，泡泡交換了。`, "success");
             } else {
-                updateStatus(`✅ 正確！${v1} < ${v2}，保持原位。`, "success");
+                updateStatus(`✅ 正確！${v1} < ${v2}，不需交換，繼續觀察下一個。`, "success");
             }
 
-            stepCount++;
-            addHistoryRow(`步驟 ${stepCount}`, [...cards], currentIdx, currentIdx + 1);
-            
-            // 移動指針
             currentIdx++;
 
-            // 檢查是否完成一輪
             if (currentIdx >= cards.length - 1 - sortedCount) {
+                const fixedValue = cards[cards.length - 1 - sortedCount];
                 sortedCount++;
+                addHistoryRow(`回合 ${currentPass} 結束`, [...cards], -1, -1, true);
+                currentPass++;
                 currentIdx = 0;
+                
                 if (sortedCount >= cards.length - 1) {
-                    updateStatus(`🎉 恭喜！全數排序完成！`, "success");
+                    updateStatus(`🎉 挑戰成功！所有泡泡都排好囉！`, "success");
                     document.getElementById('controls').style.display = 'none';
                     document.getElementById('start-btn').style.display = 'block';
                     renderBoard();
                     return;
                 } else {
-                    updateStatus(`✨ 這一輪結束！最大值已就位。下一輪開始。`, "info");
+                    updateStatus(`✨ 泡泡 ${fixedValue} 已就位！下一回合開始。`, "info");
                 }
             }
             renderBoard(currentIdx, currentIdx + 1);
         } else {
-            // 答錯了
-            updateStatus(`❌ 判斷錯囉！請看清楚 ${v1} 與 ${v2} 的大小。`, "warn");
+            updateStatus(`❌ 判斷錯囉！請看清楚 ${v1} 與 ${v2} 的大小關係。`, "warn");
         }
     }
 
     function updateStatus(msg, type) {
         const el = document.getElementById('info-msg');
         el.innerText = msg;
-        if (type === "success") el.style.background = "#eef9f1";
-        else if (type === "warn") el.style.background = "#fff2f0";
-        else el.style.background = "#f8f9fa";
+        el.style.background = (type === "success") ? "#eef9f1" : (type === "warn" ? "#fff2f0" : "#f8f9fa");
     }
 
-    function addHistoryRow(label, currentArr, i1, i2) {
+    function addHistoryRow(label, currentArr, i1, i2, isPassEnd = false) {
         const log = document.getElementById('history-log');
         const row = document.createElement('div');
-        row.className = 'history-row';
+        row.className = `history-row ${isPassEnd ? 'pass-end' : ''}`;
         row.innerHTML = `<span class="step-label">${label}</span>`;
         currentArr.forEach((val, i) => {
             const isSwap = (i === i1 || i === i2);
             row.innerHTML += `<div class="mini-card ${isSwap ? 'swap' : ''}">${val}</div>`;
         });
-        log.appendChild(row);
+        log.prepend(row); // 讓最新的記錄出現在最上面，方便學生查看
     }
 </script>
 </body>
