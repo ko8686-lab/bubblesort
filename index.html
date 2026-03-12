@@ -3,74 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泡泡偵探：氣泡排序挑戰 (協作平台相容版)</title>
+    <title>泡泡偵探：氣泡排序挑戰 (美化版)</title>
     <style>
         :root {
             --primary-color: #2980b9;
             --accent-color: #e67e22;
             --bubble-bg: #dff9fb;
             --sorted-bg: #6ab04c;
-            --table-green: #1e3799;
+            --table-green: #1a5e3a; /* 深綠色模擬撲克牌桌 */
         }
 
-        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f4f7; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f4f7; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { margin: 10px 0; color: #2c3e50; }
         
-        .game-area { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
+        .game-area { width: 100%; max-width: 900px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        #info-msg { padding: 15px; margin-bottom: 15px; background: #ebf5fb; border: 1px solid #aed6f1; border-radius: 8px; color: #2c3e50; font-weight: bold; text-align: center; font-size: 1.1rem; }
+        #info-msg { 
+            padding: 18px; margin-bottom: 20px; background: #ebf5fb; border: 1px solid #aed6f1;
+            border-radius: 8px; color: #2c3e50; font-weight: bold; text-align: center;
+            min-height: 24px; font-size: 1.15rem; transition: background 0.3s;
+        }
 
-        .game-board-container { background: var(--table-green); padding: 30px 10px; border-radius: 12px; margin-bottom: 20px; box-shadow: inset 0 0 30px rgba(0,0,0,0.5); display: flex; justify-content: center; }
+        .game-board-container {
+            background: var(--table-green); padding: 50px 20px; border-radius: 12px; 
+            margin-bottom: 30px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; min-height: 180px;
+        }
 
-        .cards-row { display: flex; gap: 10px; }
+        .cards-row { display: flex; justify-content: center; gap: 20px; } /* 增加間距 */
 
         .card {
-            width: 60px; height: 85px; background: var(--bubble-bg); border-radius: 50% 50% 45% 45%;
+            width: 70px; height: 70px; background: var(--bubble-bg); border-radius: 50%; /* 修改為正圓 */
             display: flex; justify-content: center; align-items: center;
-            font-size: 20px; font-weight: bold; color: #0984e3;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.3s; border: 3px solid #74b9ff; cursor: pointer;
+            font-size: 26px; font-weight: bold; color: #0984e3;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.25), inset -5px -5px 15px rgba(255,255,255,0.5);
+            transition: all 0.4s ease, background 0s; border: 3px solid #74b9ff; cursor: pointer;
+            line-height: 1; margin: 5px; /* 增加外邊距防止高亮時重疊 */
         }
-        .card.comparing { transform: translateY(-10px); border-color: var(--accent-color); box-shadow: 0 10px 15px rgba(230, 126, 34, 0.4); }
-        .card.sorted { background: #badc58; border-color: var(--sorted-bg); color: #2f3542; }
 
-        /* 自定義模態視窗 (取代 prompt) */
-        #custom-modal {
-            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80%; background: white; border: 2px solid var(--primary-color); border-radius: 12px;
-            padding: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 100; text-align: center;
+        .card.comparing { transform: translateY(-18px) scale(1.05); border-color: var(--accent-color); box-shadow: 0 20px 25px rgba(230, 126, 34, 0.4); z-index: 10; }
+        .card.sorted { background: #badc58; border-color: var(--sorted-bg); color: #2f3542; cursor: default; }
+
+        .history-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+        .history-row { 
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px; 
+            padding: 10px; background: #fafafa; border-radius: 6px; overflow-x: auto;
         }
-        #custom-modal p { font-size: 1.1rem; margin-bottom: 20px; font-weight: bold; }
-        .modal-btn { padding: 10px 20px; margin: 0 10px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; }
-        .btn-yes { background: var(--success-color, #27ae60); color: white; }
-        .btn-no { background: var(--accent-color); color: white; }
+        .step-label { min-width: 110px; font-weight: bold; color: #666; font-size: 0.95rem; }
+        .mini-card {
+            width: 32px; height: 32px; background: white; border: 1px solid #ccc;
+            display: flex; justify-content: center; align-items: center; font-size: 13px; border-radius: 50%;
+        }
+        .mini-card.swap { background: var(--accent-color); color: white; border-color: var(--accent-color); }
 
-        .btn-group { text-align: center; margin-bottom: 20px; }
-        button { padding: 10px 20px; font-size: 14px; cursor: pointer; border-radius: 6px; border: none; margin: 5px; font-weight: bold; transition: 0.2s; }
+        .btn-group { text-align: center; margin-bottom: 25px; }
+        button { padding: 14px 35px; font-size: 17px; cursor: pointer; border-radius: 6px; border: none; margin: 0 10px; font-weight: bold; transition: 0.3s; }
         .btn-start { background: #3498db; color: white; }
         .btn-demo { background: #9b59b6; color: white; }
-
-        .history-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; padding: 8px; background: #fafafa; border-radius: 5px; font-size: 0.8rem; }
-        .step-label { min-width: 80px; font-weight: bold; }
-        .mini-card { width: 25px; height: 25px; background: white; border: 1px solid #ccc; display: flex; justify-content: center; align-items: center; border-radius: 50%; }
-        .mini-card.swap { background: var(--accent-color); color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <header>
-    <h2>🫧 泡泡偵探：氣泡排序挑戰</h2>
+    <h1>🫧 泡泡偵探：氣泡排序挑戰</h1>
+    <p>找出未排序區域中的「最大值」，將它放到右邊固定位置！</p>
 </header>
 
 <div class="game-area">
-    <div id="info-msg">點擊「開始挑戰」來進行練習</div>
+    <div id="info-msg">準備好觀察「最大值」如何浮上來了嗎？</div>
     
     <div class="game-board-container">
         <div class="cards-row" id="board"></div>
-    </div>
-
-    <div id="custom-modal">
-        <p id="modal-text"></p>
-        <button class="modal-btn btn-yes" onclick="modalResponse(true)">是的，交換</button>
-        <button class="modal-btn btn-no" onclick="modalResponse(false)">不，不用交換</button>
     </div>
 
     <div class="btn-group">
@@ -79,7 +84,7 @@
     </div>
 
     <div class="history-section">
-        <h3>📊 排序歷程記錄</h3>
+        <h3>📊 排序歷程記錄 (由上往下閱讀)</h3>
         <div id="history-log"></div>
     </div>
 </div>
@@ -87,23 +92,25 @@
 <script>
     let cards = [];
     let n = 6;
-    let currentIdx = 0;
-    let sortedCount = 0;
+    let currentIdx = 0;  // 目前比到哪
     let stepCount = 0;
     let isAutoPlaying = false;
+    let sortedCount = 0; // 已經固定在右邊的個數
 
     function initGame() {
         isAutoPlaying = false;
-        const pool = Array.from({length: 30}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        // 確保不重複數字
+        const pool = Array.from({length: 30}, (_, i) => i + 1);
+        pool.sort(() => Math.random() - 0.5);
         cards = pool.slice(0, n);
+
         currentIdx = 0;
-        sortedCount = 0;
         stepCount = 0;
+        sortedCount = 0;
         document.getElementById('history-log').innerHTML = '';
-        document.getElementById('custom-modal').style.display = 'none';
-        updateStatus(`🔍 挑戰開始！請點擊第 1 與第 2 個泡泡進行比較。`, "info");
+        updateStatus(`🔍 挑戰開始！請點擊目前比較的兩位：位置 ${currentIdx+1} 與 ${currentIdx+2}。`, "info");
         addHistoryRow("初始狀態", cards, -1, -1);
-        renderBoard(0, 1);
+        renderBoard(currentIdx, currentIdx + 1); // 初始就高亮
     }
 
     function renderBoard(idx1 = -1, idx2 = -1) {
@@ -111,73 +118,94 @@
         board.innerHTML = '';
         cards.forEach((val, i) => {
             const card = document.createElement('div');
+            // 如果是 sortedCount 之前的牌，代表已排序固定
             const isSorted = (i >= cards.length - sortedCount);
             card.className = `card ${isSorted ? 'sorted' : ''} ${(i === idx1 || i === idx2) ? 'comparing' : ''}`;
             card.innerText = val;
-            card.onclick = () => showCompareModal(i);
+            
+            // 點擊邏輯：氣泡排序是點擊相鄰元素
+            card.onclick = () => handleCompare(i);
             board.appendChild(card);
         });
     }
 
-    function showCompareModal(clickedIdx) {
+    function handleCompare(clickedIdx) {
         if (isAutoPlaying || sortedCount >= cards.length - 1) return;
-        if (clickedIdx !== currentIdx && clickedIdx !== currentIdx + 1) {
-            updateStatus(`💡 請點擊目前比較的兩位：位置 ${currentIdx+1} 與 ${currentIdx+2}。`, "warn");
+
+        // 不能選已經排好的
+        if (clickedIdx < cards.length - sortedCount) {
+             // 必須點擊目前進度鎖定的相鄰兩個
+            if (clickedIdx !== currentIdx && clickedIdx !== currentIdx + 1) {
+                updateStatus(`💡 請點擊目前比較的兩位：位置 ${currentIdx+1} 與 ${currentIdx+2}。`, "warn");
+                return;
+            }
+        } else {
+            updateStatus(`💡 這張牌已經排好囉，請挑選左側未排序區域進行比較。`, "warn");
             return;
         }
 
         const v1 = cards[currentIdx];
         const v2 = cards[currentIdx + 1];
-        document.getElementById('modal-text').innerText = `比較 ${v1} 與 ${v2}：\n左邊大於右邊嗎？需不需要交換？`;
-        document.getElementById('custom-modal').style.display = 'block';
-    }
-
-    function modalResponse(userSwap) {
-        document.getElementById('custom-modal').style.display = 'none';
-        const v1 = cards[currentIdx];
-        const v2 = cards[currentIdx + 1];
+        
         const needSwap = v1 > v2;
+        const userChoice = confirm(`比較 ${v1} 與 ${v2}：\n左邊大於右邊嗎？需不需要交換？\n(是：交換，否：不交換)`);
 
-        if (userSwap === needSwap) {
+        if (userChoice === needSwap) {
+            // 用戶判斷正確
             if (needSwap) {
                 [cards[currentIdx], cards[currentIdx + 1]] = [cards[currentIdx + 1], cards[currentIdx]];
-                updateStatus(`✅ 正確！${v1} > ${v2}，交換完成。`, "success");
+                updateStatus(`✅ 正確！${v1} 大於 ${v2}，牌面已交換位置。`, "success");
             } else {
-                updateStatus(`✅ 正確！${v1} < ${v2}，保持原位。`, "success");
+                updateStatus(`✅ 正確！${v1} 小於 ${v2}，不需交換，準備比較下一對。`, "success");
             }
             
             stepCount++;
             addHistoryRow(`步驟 ${stepCount}`, [...cards], currentIdx, currentIdx + 1);
+            
+            // 移動到下一組
             currentIdx++;
-
+            
+            // 檢查是否完成一輪
             if (currentIdx >= cards.length - 1 - sortedCount) {
                 sortedCount++;
-                currentIdx = 0;
+                currentIdx = 0; // 重置
                 if (sortedCount >= cards.length - 1) {
-                    updateStatus(`🎉 全數排序完成！`, "success");
+                    updateStatus(`🎉 恭喜！全數排序完成！所有「最大值」都浮到右邊固定位置囉。`, "success");
+                    renderBoard(); // 最後一次渲染，不用高亮
+                    return;
                 } else {
-                    updateStatus(`✨ 這一輪完成，最大值已浮出。準備下一輪。`, "info");
+                    updateStatus(`✨ 這一輪完成，最大值已浮出。請點擊下一輪比較的首兩位：位置 1 與 2。`, "info");
                 }
             }
-            renderBoard(currentIdx, currentIdx + 1);
+            renderBoard(currentIdx, currentIdx + 1); // 完成一步後，自動將下一對高亮
         } else {
-            updateStatus(`❌ 判斷錯囉！再看一次 ${v1} 和 ${v2} 的大小。`, "warn");
+            // 用戶判斷錯誤
+            updateStatus(`❌ 位置放錯了！請再觀察一下這兩張牌的大小關係。`, "warn");
         }
     }
 
     function updateStatus(msg, type) {
         const el = document.getElementById('info-msg');
         el.innerText = msg;
-        el.style.color = (type === "success") ? "#27ae60" : (type === "warn" ? "#e74c3c" : "#2c3e50");
+        if (type === "success") el.style.background = "#eef9f1";
+        else if (type === "warn") el.style.background = "#fff2f0";
+        else el.style.background = "#ebf5fb";
     }
 
     function addHistoryRow(label, currentArr, i1, i2) {
         const log = document.getElementById('history-log');
         const row = document.createElement('div');
         row.className = 'history-row';
-        row.innerHTML = `<span class="step-label">${label}</span>`;
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'step-label';
+        labelSpan.innerText = label;
+        row.appendChild(labelSpan);
         currentArr.forEach((val, i) => {
-            row.innerHTML += `<div class="mini-card ${(i === i1 || i === i2) ? 'swap' : ''}">${val}</div>`;
+            const mini = document.createElement('div');
+            // 如果是剛交換的兩位，標記顏色
+            mini.className = `mini-card ${(i === i1 || i === i2) ? 'swap' : ''}`;
+            mini.innerText = val;
+            row.appendChild(mini);
         });
         log.appendChild(row);
     }
@@ -185,26 +213,34 @@
     async function startDemo() {
         initGame();
         isAutoPlaying = true;
-        updateStatus("🎓 自動演示模式...", "info");
+        updateStatus("🎓 自動演示中：觀察最大值如何不斷浮向最右側...", "info");
+        
+        // 外部迴圈：n-1次，決定有幾張牌會固定在右邊
         for (let i = 0; i < cards.length - 1; i++) {
+            // 內部迴圈：掃描未排序區域
             for (let j = 0; j < cards.length - 1 - i; j++) {
-                renderBoard(j, j + 1);
-                await new Promise(r => setTimeout(r, 800));
+                renderBoard(j, j + 1); // 高亮比較的兩位
+                await new Promise(r => setTimeout(r, 800)); // 演示停頓
+                
+                // 比較邏輯
                 if (cards[j] > cards[j + 1]) {
+                    // 交換
                     [cards[j], cards[j + 1]] = [cards[j + 1], cards[j]];
                     stepCount++;
                     addHistoryRow(`演示 ${stepCount}`, [...cards], j, j + 1);
                 }
-                renderBoard(j, j + 1);
-                await new Promise(r => setTimeout(r, 600));
+                renderBoard(j, j + 1); // 完成交換後再次渲染，但保持高亮
+                await new Promise(r => setTimeout(r, 600)); // 交換後停頓
             }
-            sortedCount++;
+            // 這一輪掃描完成，固定一張牌在右邊
+            sortedCount = i + 1;
+            renderBoard(); // 这一轮扫描完成，不用高亮
+            await new Promise(r => setTimeout(r, 800)); // 固定一張牌後停頓
         }
         isAutoPlaying = false;
-        renderBoard();
-        updateStatus("✅ 演示結束！", "success");
+        renderBoard(); // 全部完成
+        updateStatus("✅ 演示結束！氣泡排序的核心就是「每輪掃描將未排序區最大值右移」。", "success");
     }
 </script>
 </body>
 </html>
-
